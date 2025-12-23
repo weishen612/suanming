@@ -100,6 +100,52 @@ cp .env.example .env
 - 🔌 后端API: http://localhost:3001/api
 - 🏥 健康检查: http://localhost:3001/api/health
 
+## 🛠️ 开发与运行速查
+
+- 安装依赖：`npm install`（根目录前后端共用依赖）
+- 开发模式：`npm run dev`（5173 前端 + 3001 后端，同时启动）
+  - 仅后端：`npm run server`（nodemon 监听 `server/index.cjs`）
+  - 仅前端：`vite`（默认 5173 端口，可复用 `VITE_API_BASE_URL` 指向后端）
+- 构建：`npm run build`（先 `tsc -b` 再 `vite build`）
+- 生产启动：`npm start`（运行编译后的前端 + Express 静态托管，默认 3001）
+- 初始化数据库：`npm run db:init`（按 `server/database/schema.sql` 创建/迁移结构）
+- 日志与关闭：后端已处理 SIGTERM/SIGINT 优雅关闭，会同步关闭 SQLite 连接
+
+## 🔧 环境变量
+
+**后端**
+- `JWT_SECRET`：必填，JWT 签名密钥（默认占位需在生产重置）
+- `JWT_EXPIRES_IN`：JWT 有效期，默认 `7d`
+- `PORT`：后端端口，默认 `3001`
+- `CORS_ORIGIN`：生产允许的额外域名，逗号分隔；Koyeb `*.koyeb.app` 自动放行
+- `NODE_ENV`：`production` 时会强制静态托管 `dist`，并在无管理员时创建 `admin@localhost / admin123`
+- `KOYEB_*`：检测到 Koyeb 时自动将数据库放在 `/workspace/data`
+
+**前端 / 构建时**
+- `VITE_API_BASE_URL`：API 基地址，默认开发 `http://localhost:3001/api`，生产回退 `window.location.origin + /api`
+- `VITE_AI_API_KEY`：大模型 API Key
+- `VITE_AI_API_URL`：大模型接口地址
+- `VITE_AI_MODEL_NAME`：模型名（默认 `GLM-4.5`）
+- 其他可选：`VITE_AI_MAX_TOKENS`、`VITE_AI_TEMPERATURE`、`VITE_AI_TIMEOUT`、`VITE_AI_STREAM`
+
+## 💾 数据存储与迁移
+
+- 数据库：SQLite，默认路径 `./numerology.db`（开发）；生产 `/app/data/numerology.db`；Koyeb Volume `/workspace/data/numerology.db`
+- 启动时自动创建目录、启用 WAL、执行 `schema.sql`，并包含迁移逻辑（如 `ai_interpretations`、`qimen` 支持）
+- 命令行初始化：`npm run db:init`
+
+## 🤖 AI 解读与导出流程
+
+- 前端请求分析后，通过 `/api/download` 生成完整 Markdown 报告，再将表格转纯文本后调用可配置的大模型 API（支持流式）
+- AI 调用结果可保存到数据库或 localStorage；模型、温度、超时、流式等均可通过 `VITE_AI_*` 调整
+- 下载/导出：后端统一提供 Markdown/PDF/TXT 生成，前端 `DownloadButton`/`aiInterpretationService` 复用同一路径
+
+## 🧪 测试与质量
+
+- 集成测试：`npm run test`（根目录）或 `npm run test:integration`
+- Lint：`npm run lint`
+- 健康检查：`/api/health`（应用层）与 `/health`（基础服务探活）
+
 ## 🏗️ 项目架构 (v3.1)
 
 ### 架构特点
